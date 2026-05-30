@@ -23,3 +23,6 @@ include-package-data = true
 
 [tool.vercel]
 entrypoint = "karaoke.wsgi:application"
+
+[tool.vercel.scripts]
+build = "python manage.py collectstatic --noinput"
