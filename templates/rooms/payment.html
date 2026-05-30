@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Оплата бронирования #{{ booking.pk }} — KaraokeClub</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="payment-page">
+  <div class="container">
+    <h1>Оплата бронирования</h1>
+    
+    <div class="booking-summary">
+      <h3>Детали бронирования</h3>
+      <div class="summary-item">
+        <strong>Комната:</strong> {{ booking.slot.room.name }}
+      </div>
+      <div class="summary-item">
+        <strong>Дата и время:</strong> {{ booking.slot.date|date:"d.m.Y" }} {{ booking.slot.start_time|time:"H:i" }}–{{ booking.slot.end_time|time:"H:i" }}
+      </div>
+      <div class="summary-item">
+        <strong>Статус:</strong> <span class="status status-{{ booking.status }}">{{ booking.get_status_display }}</span>
+      </div>
+      <div class="summary-item">
+        <strong>Сумма к оплате:</strong> <span class="price">{{ payment.amount }} ₽</span>
+      </div>
+    </div>
+    
+    {% if payment.status == "pending" %}
+    <div class="payment-form">
+      <h3>Метод оплаты</h3>
+      <div class="payment-method">
+        <div class="method-item">
+          <input type="radio" id="method_online" name="payment_method" value="online" checked>
+          <label for="method_online">
+            <span class="method-title">Онлайн-оплата</span>
+            <span class="method-desc">Безопасная оплата картой</span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="payment-actions">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="pay">
+          <button type="submit" class="btn-pay">Оплатить {{ payment.amount }} ₽</button>
+        </form>
+        
+        <form method="post" class="cancel-form">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="cancel">
+          <button type="submit" class="btn-cancel">Отменить бронирование</button>
+        </form>
+      </div>
+    </div>
+    {% elif payment.status == "paid" %}
+    <div class="payment-success">
+      <div class="success-icon">✓</div>
+      <h3>Оплата прошла успешно!</h3>
+      <p>Ваше бронирование подтверждено. Спасибо за доверие!</p>
+      <a href="{% url 'cabinet' %}" class="btn-back">Вернуться в личный кабинет</a>
+    </div>
+    {% elif payment.status == "failed" or payment.status == "refunded" %}
+    <div class="payment-failed">
+      <div class="failed-icon">✕</div>
+      <h3>Оплата не выполнена</h3>
+      <p>Бронирование отменено. Если у вас есть вопросы, свяжитесь с администрацией.</p>
+      <a href="{% url 'rooms_home' %}" class="btn-back">На главную</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+</body>
+</html>

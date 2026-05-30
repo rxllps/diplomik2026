@@ -174,9 +174,8 @@
   {% if user.is_authenticated %}
   <div class="review-form">
     <h4>Оставить отзыв</h4>
-    <form method="post">
+    <form method="post" action="{% url 'otziv:add_review' room_id=room.pk %}">
       {% csrf_token %}
-      <input type="hidden" name="room" value="{{ room.pk }}">
       
       <div class="form-group">
         <label>Оценка</label>
