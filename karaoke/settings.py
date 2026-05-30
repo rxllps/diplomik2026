@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "замените-на-свой-секретный-ключ"
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -72,4 +73,3 @@ MEDIA_ROOT  = BASE_DIR / "media"
 LOGIN_URL          = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/cabinet/"
 LOGOUT_REDIRECT_URL = "/"
-
