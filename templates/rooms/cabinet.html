@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Личный кабинет — KaraokeClub</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div class="user-avatar">
+      {% if user.avatar %}
+        <img src="{{ user.avatar.url }}" alt="avatar">
+      {% else %}
+        <span>{{ user.username|first|upper }}</span>
+      {% endif %}
+    </div>
+    <div>
+      <h2>{{ user.get_full_name|default:user.username }}</h2>
+      <p class="muted">{{ user.email }}
+        {% if user.is_vip %}<span class="badge-vip">👑 VIP</span>{% endif %}
+      </p>
+    </div>
+    <div class="bonus-block">
+      <div class="bonus-val">{{ user.bonus_points }}</div>
+      <div class="bonus-lbl">бонусных баллов</div>
+    </div>
+  </div>
+</div>
+
+{# ── Вкладки ── #}
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="upcoming">Предстоящие</button>
+    <button class="tab" data-tab="past">История</button>
+    <button class="tab" data-tab="cancelled">Отменённые</button>
+  </div>
+</div>
+
+{# ── Контент вкладок ── #}
+<div class="cabinet-body">
+
+  {# Предстоящие #}
+  <div class="tab-pane active" id="tab-upcoming">
+    {% for b in bookings %}
+      {% if b.status in "pending,confirmed" %}
+        {% include "rooms/_booking_card.html" with booking=b show_cancel=True %}
+      {% endif %}
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <p>Нет предстоящих бронирований</p>
+        <a href="{% url 'rooms_home' %}" class="btn-book">Забронировать комнату</a>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# История #}
+  <div class="tab-pane" id="tab-past">
+    {% for b in bookings %}
+      {% if b.status == "completed" %}
+        {% include "rooms/_booking_card.html" with booking=b show_cancel=False %}
+      {% endif %}
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-icon">🎤</div>
+        <p>Завершённых визитов пока нет</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Отменённые #}
+  <div class="tab-pane" id="tab-cancelled">
+    {% for b in bookings %}
+      {% if b.status == "cancelled" %}
+        {% include "rooms/_booking_card.html" with booking=b show_cancel=False %}
+      {% endif %}
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <p>Отменённых бронирований нет</p>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+{# ── Модалка подтверждения отмены ── #}
+<div class="overlay" id="cancelOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <h3>Отменить бронирование?</h3>
+      <button class="close-btn" id="closeCancelModal">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <p class="muted" style="margin-bottom:24px">Слот освободится и будет доступен другим пользователям.</p>
+      <form id="cancelForm" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-book" style="background:linear-gradient(135deg,#c62828,#e53935)">
+          Да, отменить
+        </button>
+        <button type="button" class="btn-outline" style="margin-left:12px" id="closeCancelModal2">
+          Назад
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+<script>
+$(function () {
+  // Вкладки
+  $('.tab').on('click', function () {
+    const id = $(this).data('tab');
+    $('.tab').removeClass('active');
+    $(this).addClass('active');
+    $('.tab-pane').removeClass('active');
+    $('#tab-' + id).addClass('active');
+  });
+
+  // Модалка отмены
+  $(document).on('click', '.js-cancel', function (e) {
+    e.preventDefault();
+    const url = $(this).data('url');
+    $('#cancelForm').attr('action', url);
+    $('#cancelOverlay').addClass('show');
+  });
+
+  $('#closeCancelModal, #closeCancelModal2').on('click', function () {
+    $('#cancelOverlay').removeClass('show');
+  });
+
+  $('#cancelOverlay').on('click', function (e) {
+    if (e.target === this) $(this).removeClass('show');
+  });
+});
+</script>
+</body>
+</html>
+
+{% load static %}
+<div class="booking-card status-{{ booking.status }}">
+  <div class="bc-left">
+    <div class="bc-room">{{ booking.slot.room.name }}</div>
+    <div class="bc-time">
+      {{ booking.slot.date|date:"j E Y" }},
+      {{ booking.slot.start_time|time:"H:i" }}–{{ booking.slot.end_time|time:"H:i" }}
+    </div>
+    {% if booking.package %}
+      <div class="bc-pkg">📦 {{ booking.package.name }}</div>
+    {% endif %}
+    <div class="bc-guests">👥 {{ booking.guests }} гостей</div>
+  </div>
+  <div class="bc-right">
+    <div class="bc-price">{{ booking.total_price }} ₽</div>
+    <span class="status-badge {{ booking.status }}">
+      {{ booking.get_status_display }}
+    </span>
+    {% if show_cancel %}
+      <a href="#" class="btn-cancel js-cancel"
+         data-url="{% url 'cancel_booking' booking.pk %}">
+        Отменить
+      </a>
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,21 @@
+<nav class="navbar">
+  <a href="{% url 'rooms_home' %}" class="navbar-brand">🎤 KaraokeClub</a>
+  <div class="navbar-links">
+    <a href="{% url 'rooms_home' %}"  {% if request.resolver_match.url_name == 'rooms_home'  %}class="active"{% endif %}>Расписание</a>
+    <a href="{% url 'upcoming' %}"    {% if request.resolver_match.url_name == 'upcoming'     %}class="active"{% endif %}>Комнаты</a>
+    <a href="{% url 'price' %}"       {% if request.resolver_match.url_name == 'price'        %}class="active"{% endif %}>Тарифы</a>
+    <a href="{% url 'my_karaoke' %}"  {% if request.resolver_match.url_name == 'my_karaoke'  %}class="active"{% endif %}>О клубе</a>
+    {% if user.is_staff %}
+      <a href="{% url 'reports' %}"   {% if request.resolver_match.url_name == 'reports'     %}class="active"{% endif %}>Отчёты</a>
+    {% endif %}
+  </div>
+  <div class="navbar-user">
+    {% if user.is_authenticated %}
+      <span class="username">{{ user.username }}</span>
+      <a href="{% url 'cabinet' %}" class="btn-outline" style="padding:6px 14px;font-size:.82rem">Кабинет</a>
+      <a href="{% url 'logout' %}"  class="btn-outline" style="padding:6px 14px;font-size:.82rem;border-color:#555;color:var(--muted)">Выйти</a>
+    {% else %}
+      <a href="{% url 'login' %}"    class="btn-outline" style="padding:6px 14px;font-size:.82rem">Войти</a>
+    {% endif %}
+  </div>
+</nav>

@@ -1,0 +1,224 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KaraokeClub — Расписание</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="hero">
+  <h2>Забронируй свою комнату</h2>
+  <p>Выбери дату и свободный слот — бронирование займёт 30 секунд</p>
+</div>
+
+{# ── Навигация по датам ── #}
+<div class="date-nav" id="dateNav">
+  {% for day in date_range %}
+    <a href="?date={{ day.isoformat }}"
+       class="date-btn {% if day == selected_date %}active{% endif %}">
+      {% if day == today %}Сегодня
+      {% else %}{{ day|date:"D, j M" }}
+      {% endif %}
+    </a>
+  {% endfor %}
+</div>
+
+{# ── Сетка комнат ── #}
+<div class="grid">
+  {% for room in rooms %}
+    {% with room_slots=slots|dictsort:"start_time" %}
+    <div class="room-card">
+      <div class="room-header">
+        {% if room.photo %}
+          <img src="{{ room.photo.url }}" class="room-thumb" alt="{{ room.name }}">
+        {% else %}
+          <div class="room-icon">🎤</div>
+        {% endif %}
+        <div class="room-info">
+          <div class="room-name">{{ room.name }}</div>
+          <div class="room-meta">до {{ room.capacity }} чел. · {{ room.price_per_hour }} ₽/час</div>
+        </div>
+        <div class="room-badge">
+          {% with free_count=room.slots.all|length %}
+            <span class="tag-free">{{ free_count }} своб.</span>
+          {% endwith %}
+        </div>
+      </div>
+
+      <div class="slots">
+        {% for slot in slots %}
+          {% if slot.room == room %}
+            {% if slot.is_booked %}
+              <span class="slot busy" title="Занято">{{ slot.start_time|time:"H:i" }}</span>
+            {% else %}
+              {% if user.is_authenticated %}
+                <a href="{% url 'book_slot' slot.pk %}"
+                   class="slot free js-book"
+                   data-slot="{{ slot.pk }}"
+                   data-room="{{ room.name }}"
+                   data-time="{{ slot.start_time|time:'H:i' }}–{{ slot.end_time|time:'H:i' }}"
+                   data-price="{{ room.price_per_hour }}"
+                   title="Нажмите для бронирования">
+                  {{ slot.start_time|time:"H:i" }}
+                </a>
+              {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}"
+                   class="slot free" title="Войдите для бронирования">
+                  {{ slot.start_time|time:"H:i" }}
+                </a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% empty %}
+          <p class="no-slots">Слоты не найдены</p>
+        {% endfor %}
+      </div>
+
+      <div class="room-footer">
+        <a href="{% url 'room_schedule' room.url_name %}" class="btn-outline">
+          Подробнее →
+        </a>
+      </div>
+    </div>
+    {% endwith %}
+  {% empty %}
+    <p class="empty-state">Активные комнаты не найдены.</p>
+  {% endfor %}
+</div>
+
+{# ── Модальное окно быстрого бронирования ── #}
+{% if user.is_authenticated %}
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>🎵 Бронирование слота</h3>
+      <button class="close-btn" id="closeModal">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-row">
+        <div><div class="lbl">Комната</div><div class="val" id="mRoom">—</div></div>
+        <div><div class="lbl">Дата</div><div class="val" id="mDate">{{ selected_date|date:"j E" }}</div></div>
+        <div><div class="lbl">Время</div><div class="val" id="mTime">—</div></div>
+      </div>
+
+      <form id="quickBookForm" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="slot_id" id="hiddenSlotId">
+
+        <div class="form-group">
+          <label>Пакет услуг</label>
+          <select name="package" id="pkgSelect">
+            <option value="" data-price="0">Без пакета (почасовая оплата)</option>
+            {% for pkg in packages %}
+              <option value="{{ pkg.pk }}" data-price="{{ pkg.price }}">
+                {{ pkg.name }} — {{ pkg.price }} ₽ ({{ pkg.duration_hours }} ч)
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Количество гостей</label>
+          <input type="number" name="guests" id="guestCount" min="1" max="20" value="2">
+        </div>
+
+        <div class="form-group">
+          <label>Способ оплаты</label>
+          <select name="payment_method">
+            <option value="online">Онлайн</option>
+            <option value="card">Карта при посещении</option>
+            <option value="cash">Наличные</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Пожелания</label>
+          <textarea name="comment" rows="3" placeholder="Украшения, реквизит…"></textarea>
+        </div>
+
+        <div class="price-row">
+          <span>Итого:</span>
+          <strong id="totalPrice">0 ₽</strong>
+        </div>
+
+        <button type="submit" class="btn-book">Забронировать</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% include "rooms/_footer.html" %}
+
+<script>
+$(function () {
+  const overlay = $('#overlay');
+
+  // Открытие модалки
+  $(document).on('click', '.js-book', function (e) {
+    e.preventDefault();
+    const $el = $(this);
+    $('#hiddenSlotId').val($el.data('slot'));
+    $('#mRoom').text($el.data('room'));
+    $('#mTime').text($el.data('time'));
+    window._hourPrice = parseFloat($el.data('price')) || 0;
+    calcPrice();
+    overlay.addClass('show');
+  });
+
+  // Закрытие
+  $('#closeModal, #overlay').on('click', function (e) {
+    if (e.target === this) overlay.removeClass('show');
+  });
+
+  // Пересчёт цены
+  $('#pkgSelect').on('change', calcPrice);
+
+  function calcPrice() {
+    const opt = $('#pkgSelect option:selected');
+    const pkgPrice = parseFloat(opt.data('price')) || 0;
+    const total = pkgPrice > 0 ? pkgPrice : window._hourPrice;
+    $('#totalPrice').text(total.toLocaleString('ru') + ' ₽');
+  }
+
+  // AJAX-отправка формы
+  $('#quickBookForm').on('submit', function (e) {
+    e.preventDefault();
+    const slotId = $('#hiddenSlotId').val();
+    $.ajax({
+      url: '/book/' + slotId + '/',
+      method: 'POST',
+      data: $(this).serialize(),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      success: function (res) {
+        overlay.removeClass('show');
+        showToast('✅ Бронирование #' + res.booking_id + ' создано! Сумма: ' + res.total + ' ₽');
+        // Помечаем слот как занятый без перезагрузки
+        $('[data-slot="' + slotId + '"]')
+          .removeClass('free js-book').addClass('busy')
+          .removeAttr('href data-slot data-room data-time data-price');
+      },
+      error: function (xhr) {
+        const errs = xhr.responseJSON && xhr.responseJSON.errors;
+        showToast('❌ Ошибка: ' + (errs ? JSON.stringify(errs) : 'Попробуйте снова'), 'error');
+      }
+    });
+  });
+
+  function showToast(msg, type) {
+    const t = $('<div class="toast ' + (type || 'success') + '">' + msg + '</div>');
+    $('body').append(t);
+    setTimeout(() => t.addClass('visible'), 10);
+    setTimeout(() => { t.removeClass('visible'); setTimeout(() => t.remove(), 400); }, 3500);
+  }
+});
+</script>
+</body>
+</html>

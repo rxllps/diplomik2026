@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KaraokeClub — Каталог комнат</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="hero">
+  <h2>Наши караоке-комнаты</h2>
+  <p>Выберите подходящую комнату для вашего мероприятия</p>
+</div>
+
+<div class="grid">
+  {% for room in rooms %}
+  <div class="room-card">
+    <div class="room-header">
+      {% if room.photo %}
+        <img src="{{ room.photo.url }}" class="room-thumb" alt="{{ room.name }}">
+      {% else %}
+        <div class="room-icon">🎤</div>
+      {% endif %}
+      <div class="room-info">
+        <div class="room-name">{{ room.name }}</div>
+        <div class="room-meta">
+          до {{ room.capacity }} чел. · {{ room.price_per_hour }} ₽/час
+          {% if room.is_vip %}<span class="badge-vip">VIP</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="room-features">
+      <div class="feature">🎤 Профессиональное оборудование</div>
+      <div class="feature">📺 {{ room.screen_size }}" экран</div>
+      <div class="feature">🔊 {{ room.audio_power }}W акустика</div>
+      {% if room.has_kitchen %}<div class="feature">🍽️ Кухня</div>{% endif %}
+      {% if room.has_balcony %}<div class="feature">🌅 Балкон</div>{% endif %}
+    </div>
+
+    <div class="room-footer">
+      <div class="room-rating">
+        <span class="stars">
+          {% for i in "x"|rjust:room.avg_rating|slice:":5" %}★{% endfor %}
+          {% for i in "x"|rjust:5|slice:room.avg_rating|slice:"5:" %}☆{% endfor %}
+        </span>
+        <span class="count">({{ room.reviews.count }} отзывов)</span>
+      </div>
+      <a href="{% url 'room_schedule' room.url_name %}" class="btn-book">
+        Забронировать →
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <p class="empty-state">Комнаты не найдены.</p>
+  {% endfor %}
+</div>
+
+{% include "rooms/_footer.html" %}
+
+</body>
+</html>

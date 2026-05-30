@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KaraokeClub — Тарифы и пакеты</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="hero">
+  <h2>Тарифы и пакеты услуг</h2>
+  <p>Выберите подходящий вариант для вашего мероприятия</p>
+</div>
+
+{# ── Пакеты услуг ── #}
+<div class="section">
+  <h3 class="section-title">Готовые пакеты</h3>
+  <div class="packages-grid">
+    {% for package in packages %}
+    <div class="package-card">
+      <div class="package-header">
+        <h4>{{ package.name }}</h4>
+        <div class="package-price">{{ package.price }} ₽</div>
+        <div class="package-duration">на {{ package.duration_hours }} часа</div>
+      </div>
+      
+      <div class="package-features">
+        {% for feature in package.get_features_list %}
+        <div class="feature">{{ feature }}</div>
+        {% endfor %}
+      </div>
+      
+      <div class="package-footer">
+        <a href="{% url 'rooms_home' %}" class="btn-book">Выбрать</a>
+      </div>
+    </div>
+    {% empty %}
+    <p class="empty-state">Пакеты услуг временно недоступны.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Почасовая оплата ── #}
+<div class="section">
+  <h3 class="section-title">Почасовая оплата</h3>
+  <div class="hourly-rates">
+    {% for room in rooms %}
+    <div class="rate-card">
+      <div class="rate-header">
+        <div class="room-name">{{ room.name }}</div>
+        <div class="room-meta">до {{ room.capacity }} чел.</div>
+      </div>
+      <div class="rate-price">{{ room.price_per_hour }} ₽/час</div>
+      <a href="{% url 'rooms_home' %}" class="btn-outline">Забронировать</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Дополнительные услуги ── #}
+<div class="section">
+  <h3 class="section-title">Дополнительные услуги</h3>
+  <table class="services-table">
+    <tr>
+      <td>Фото и видео съёмка</td>
+      <td>500 ₽</td>
+    </tr>
+    <tr>
+      <td>Тематическое оформление</td>
+      <td>от 1000 ₽</td>
+    </tr>
+    <tr>
+      <td>Кейтеринг</td>
+      <td>по меню</td>
+    </tr>
+    <tr>
+      <td>Аниматор</td>
+      <td>1500 ₽/час</td>
+    </tr>
+  </table>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+</body>
+</html>

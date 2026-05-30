@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KaraokeClub — О клубе</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="hero">
+  <h2>Добро пожаловать в KaraokeClub</h2>
+  <p>Место, где звучат ваши любимые песни</p>
+</div>
+
+<div class="about-section">
+  <div class="about-content">
+    <h3>О нас</h3>
+    <p>Мы создали уникальное пространство для любителей караоке, где каждый может почувствовать себя настоящей звездой. Наш клуб работает с 2015 года и за это время провел тысячи незабываемых вечеров.</p>
+    
+    <h3>Наши преимущества</h3>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🎤</div>
+        <h4>Профессиональное оборудование</h4>
+        <p>Современные микрофоны, мощная акустика и большой выбор песен на русском и английском языках</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🌟</div>
+        <h4>Уютная атмосфера</h4>
+        <p>Просторные комнаты с качественным звукоизоляцией, стильным дизайном и комфортной мебелью</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🎉</div>
+        <h4>Организация мероприятий</h4>
+        <p>Мы поможем организовать День рождения, корпоратив или другое торжество с учетом всех ваших пожеланий</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <h4>Программа лояльности</h4>
+        <p>Накапливайте бонусы за каждое посещение и получайте скидки на будущие бронирования</p>
+      </div>
+    </div>
+    
+    <h3>Контакты</h3>
+    <div class="contacts">
+      <p>📍 Адрес: г. Москва, ул. Пушкина, д. 10</p>
+      <p>📞 Телефон: +7 (495) 123-45-67</p>
+      <p>✉️ Email: info@karaokeclub.ru</p>
+      <p>⏰ Режим работы: ежедневно с 12:00 до 04:00</p>
+    </div>
+  </div>
+  
+  <div class="about-image">
+    <img src="{% static 'images/club-interior.jpg' %}" alt="Интерьер караоке-клуба">
+  </div>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+</body>
+</html>

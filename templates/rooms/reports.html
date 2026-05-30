@@ -1,0 +1,192 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Отчёты — KaraokeClub</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  {# Простые графики через Chart.js CDN #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <div>
+      <h2>📊 Отчёты и аналитика</h2>
+      <p class="muted">Данные обновляются в реальном времени</p>
+    </div>
+  </div>
+</div>
+
+{# ── KPI-карточки ── #}
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon">📋</div>
+    <div class="kpi-val">{{ stats.total_bookings }}</div>
+    <div class="kpi-lbl">Всего бронирований</div>
+  </div>
+  <div class="kpi-card accent-green">
+    <div class="kpi-icon">✅</div>
+    <div class="kpi-val">{{ stats.confirmed }}</div>
+    <div class="kpi-lbl">Подтверждено</div>
+  </div>
+  <div class="kpi-card accent-purple">
+    <div class="kpi-icon">💰</div>
+    <div class="kpi-val">{{ stats.revenue|floatformat:0 }} ₽</div>
+    <div class="kpi-lbl">Выручка (оплачено)</div>
+  </div>
+  <div class="kpi-card accent-blue">
+    <div class="kpi-icon">📅</div>
+    <div class="kpi-val">{{ stats.today_slots }}</div>
+    <div class="kpi-lbl">Занято сегодня</div>
+  </div>
+</div>
+
+{# ── Графики ── #}
+<div class="charts-grid">
+  <div class="chart-card">
+    <h3 class="chart-title">Бронирования по комнатам</h3>
+    <canvas id="chartRooms" height="240"></canvas>
+  </div>
+  <div class="chart-card">
+    <h3 class="chart-title">Выручка по комнатам (₽)</h3>
+    <canvas id="chartRevenue" height="240"></canvas>
+  </div>
+</div>
+
+{# ── Таблица по комнатам ── #}
+<div class="table-wrap">
+  <h3 class="section-title">Детализация по комнатам</h3>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Комната</th>
+        <th>Вместимость</th>
+        <th>Бронирований</th>
+        <th>Выручка</th>
+        <th>Средний чек</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for room in stats.by_room %}
+        <tr>
+          <td>
+            <a href="{% url 'room_schedule' room.url_name %}">{{ room.name }}</a>
+          </td>
+          <td>{{ room.capacity }} чел.</td>
+          <td>
+            <span class="pill">{{ room.cnt|default:0 }}</span>
+          </td>
+          <td>{{ room.rev|default:0|floatformat:0 }} ₽</td>
+          <td>
+            {% if room.cnt %}
+              {{ room.rev|default:0|floatformat:0|add:"0" }} ₽
+              {# В Django фильтров для деления нет — вычислим в view #}
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5" class="empty-row">Нет данных</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="2"><strong>Итого</strong></td>
+        <td><strong>{{ stats.total_bookings }}</strong></td>
+        <td><strong>{{ stats.revenue|floatformat:0 }} ₽</strong></td>
+        <td>—</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+{# ── Фильтр по периоду (форма) ── #}
+<div class="table-wrap" style="margin-top:0">
+  <h3 class="section-title">Фильтр периода</h3>
+  <form method="get" class="filter-form">
+    <div class="form-group inline">
+      <label>С</label>
+      <input type="date" name="date_from" value="{{ request.GET.date_from }}">
+    </div>
+    <div class="form-group inline">
+      <label>По</label>
+      <input type="date" name="date_to" value="{{ request.GET.date_to }}">
+    </div>
+    <button type="submit" class="btn-book" style="width:auto;padding:9px 24px">
+      Применить
+    </button>
+    <a href="{% url 'reports' %}" class="btn-outline" style="margin-left:8px">Сбросить</a>
+  </form>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+{# ── Chart.js ── #}
+<script>
+(function () {
+  // Данные из Django → JS
+  const roomLabels = [
+    {% for r in stats.by_room %}"{{ r.name }}"{% if not forloop.last %},{% endif %}{% endfor %}
+  ];
+  const roomCounts = [
+    {% for r in stats.by_room %}{{ r.cnt|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}
+  ];
+  const roomRevs = [
+    {% for r in stats.by_room %}{{ r.rev|default:0|floatformat:0 }}{% if not forloop.last %},{% endif %}{% endfor %}
+  ];
+
+  const COLORS = ['#e040fb','#7c4dff','#00e676','#40c4ff','#ffab40','#ff5252'];
+
+  // Бронирования по комнатам
+  new Chart(document.getElementById('chartRooms'), {
+    type: 'bar',
+    data: {
+      labels: roomLabels,
+      datasets: [{
+        label: 'Бронирований',
+        data: roomCounts,
+        backgroundColor: COLORS,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#aaa' }, grid: { color: '#2a2a4a' } },
+        y: { ticks: { color: '#aaa' }, grid: { color: '#2a2a4a' } }
+      }
+    }
+  });
+
+  // Выручка
+  new Chart(document.getElementById('chartRevenue'), {
+    type: 'doughnut',
+    data: {
+      labels: roomLabels,
+      datasets: [{
+        data: roomRevs,
+        backgroundColor: COLORS,
+        hoverOffset: 10,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#ccc', boxWidth: 14 }
+        }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>

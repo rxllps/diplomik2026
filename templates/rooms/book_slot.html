@@ -1,0 +1,77 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Бронирование — KaraokeClub</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h2>Бронирование слота</h2>
+    <p class="muted">
+      Комната: <strong>{{ slot.room.name }}</strong> ·
+      Дата: <strong>{{ slot.date|date:"j E Y" }}</strong> ·
+      Время: <strong>{{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}</strong>
+    </p>
+  </div>
+</div>
+
+<div class="form-container">
+  <form method="post" class="booking-form">
+    {% csrf_token %}
+    
+    <div class="form-section">
+      <h3>Основная информация</h3>
+      
+      <div class="form-group">
+        <label for="{{ form.package.id_for_label }}">Пакет услуг</label>
+        {{ form.package }}
+        <div class="form-hint">Выберите готовый пакет или оставьте пустым для почасовой оплаты</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="{{ form.guests.id_for_label }}">Количество гостей</label>
+        {{ form.guests }}
+        <div class="form-error">{{ form.guests.errors }}</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="{{ form.payment_method.id_for_label }}">Способ оплаты</label>
+        {{ form.payment_method }}
+      </div>
+    </div>
+    
+    <div class="form-section">
+      <h3>Дополнительно</h3>
+      
+      <div class="form-group">
+        <label for="{{ form.comment.id_for_label }}">Пожелания</label>
+        {{ form.comment }}
+        <div class="form-hint">Украшения, реквизит, особые запросы</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="{{ form.contact_phone.id_for_label }}">Контактный телефон</label>
+        {{ form.contact_phone }}
+        <div class="form-error">{{ form.contact_phone.errors }}</div>
+      </div>
+    </div>
+    
+    <div class="form-actions">
+      <a href="{% url 'rooms_home' %}" class="btn-outline">Отмена</a>
+      <button type="submit" class="btn-book">Забронировать</button>
+    </div>
+  </form>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+</body>
+</html>

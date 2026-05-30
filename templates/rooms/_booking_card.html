@@ -1,0 +1,29 @@
+<div class="booking-card status-{{ booking.status }}">
+  <div class="bc-left">
+    <div class="bc-room">{{ booking.slot.room.name }}</div>
+    <div class="bc-time">
+      {{ booking.slot.date|date:"j E Y" }},
+      {{ booking.slot.start_time|time:"H:i" }}–{{ booking.slot.end_time|time:"H:i" }}
+    </div>
+    {% if booking.package %}
+      <div class="bc-pkg">📦 {{ booking.package.name }}</div>
+    {% endif %}
+    <div class="bc-guests">👥 {{ booking.guests }} гост.</div>
+    {% if booking.comment %}
+      <div class="bc-guests" style="color:#aaa">💬 {{ booking.comment|truncatechars:60 }}</div>
+    {% endif %}
+  </div>
+  <div class="bc-right" style="text-align:right">
+    <div class="bc-price">{{ booking.total_price }} ₽</div>
+    <span class="status-badge {{ booking.status }}">
+      {{ booking.get_status_display }}
+    </span>
+    {% if show_cancel %}
+      <br>
+      <a href="#" class="btn-cancel js-cancel"
+         data-url="{% url 'cancel_booking' booking.pk %}">
+        Отменить
+      </a>
+    {% endif %}
+  </div>
+</div>

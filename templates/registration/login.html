@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход — KaraokeClub</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+
+{% include "rooms/_navbar.html" %}
+
+<div class="page-header">
+  <div class="page-header-inner">
+    <h2>Вход в личный кабинет</h2>
+    <p class="muted">Введите свои данные для входа</p>
+  </div>
+</div>
+
+<div class="form-container">
+  <form method="post" class="auth-form">
+    {% csrf_token %}
+    
+    <div class="form-group">
+      <label for="{{ form.username.id_for_label }}">Имя пользователя</label>
+      {{ form.username }}
+      <div class="form-error">{{ form.username.errors }}</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="{{ form.password.id_for_label }}">Пароль</label>
+      {{ form.password }}
+      <div class="form-error">{{ form.password.errors }}</div>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn-book">Войти</button>
+    </div>
+    
+    {% if form.non_field_errors %}
+    <div class="form-error non-field">
+      {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+    
+    <div class="form-footer">
+      <p><a href="{% url 'password_reset' %}">Забыли пароль?</a></p>
+    </div>
+  </form>
+</div>
+
+{% include "rooms/_footer.html" %}
+
+</body>
+</html>
