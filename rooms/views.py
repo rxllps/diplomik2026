@@ -4,10 +4,12 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Case, Avg, When, Value, IntegerField
+from django.db.utils import IntegrityError
 
 from .models import Room, TimeSlot, Booking, ServicePackage, Payment
 from .forms import BookingForm
+
 
 def rooms_home(request):
     today = timezone.localdate()
@@ -22,7 +24,7 @@ def rooms_home(request):
     })
 
 def room_schedule(request, url_name):
-    room  = get_object_or_404(Room, url_name=url_name, is_active=True)
+    room = get_object_or_404(Room, url_name=url_name, is_active=True)
     today = timezone.localdate()
     slots = (TimeSlot.objects
              .filter(room=room, date__gte=today)
@@ -42,17 +44,22 @@ def upcoming(request):
         avg_rating=Case(
             When(reviews__rating__isnull=False, then=Avg("reviews__rating")),
             default=Value(0),
+            output_field=IntegerField(),
         )
     )
     return render(request, "rooms/upcoming.html", {"rooms": rooms})
+
 
 def price(request):
     packages = ServicePackage.objects.filter(is_active=True).order_by("price")
     rooms    = Room.objects.filter(is_active=True)
     return render(request, "rooms/price.html", {"packages": packages, "rooms": rooms})
 
+
 def my_karaoke(request):
     return render(request, "rooms/my_karaoke.html")
+
+
 def reports(request):
     if not request.user.is_staff:
         return redirect("rooms_home")
@@ -84,7 +91,6 @@ def book_slot(request, slot_id):
             try:
                 with transaction.atomic():
                     booking.save()
-                    
                     # Create payment record
                     payment = Payment.objects.create(
                         booking=booking,
@@ -92,20 +98,15 @@ def book_slot(request, slot_id):
                         method=form.cleaned_data.get("payment_method", "online"),
                         status="pending"
                     )
-                    
                     # Mark slot as booked
                     slot.is_booked = True
                     slot.save()
-                    
                 messages.success(request, f"Бронирование #{booking.pk} создано! Ожидайте оплаты.")
-                
                 # Redirect to payment page
                 return redirect('payment_page', booking_id=booking.pk)
-                
             except IntegrityError:
                 messages.error(request, "Слот уже забронирован")
                 return JsonResponse({"ok": False, "errors": "Слот уже забронирован"}, status=409)
-            
         else:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"ok": False, "errors": form.errors}, status=400)
@@ -119,11 +120,9 @@ def book_slot(request, slot_id):
 def payment_page(request, booking_id):
     booking = get_object_or_404(Booking, pk=booking_id, user=request.user)
     payment = get_object_or_404(Payment, booking=booking)
-    
     if request.method == "POST":
         # Process payment confirmation
         action = request.POST.get('action')
-        
         if action == "pay":
             with transaction.atomic():
                 # Mark payment as paid
