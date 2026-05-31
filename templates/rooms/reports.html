@@ -77,7 +77,7 @@
       {% for room in stats.by_room %}
         <tr>
           <td>
-            <a href="{% url 'room_schedule' room.url_name %}">{{ room.name }}</a>
+            <a href="{% url 'rooms:room_schedule' room.url_name %}">{{ room.name }}</a>
           </td>
           <td>{{ room.capacity }} чел.</td>
           <td>
@@ -121,7 +121,7 @@
     <button type="submit" class="btn-book" style="width:auto;padding:9px 24px">
       Применить
     </button>
-    <a href="{% url 'reports' %}" class="btn-outline" style="margin-left:8px">Сбросить</a>
+    <a href="{% url 'rooms:reports' %}" class="btn-outline" style="margin-left:8px">Сбросить</a>
   </form>
 </div>
 
