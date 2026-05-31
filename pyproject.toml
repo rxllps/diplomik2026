@@ -27,7 +27,3 @@ entrypoint = "karaoke.wsgi:application"
 
 [tool.vercel.scripts]
 build = "python manage.py collectstatic --noinput"
-<<<<<<< HEAD
-=======
-
->>>>>>> b77fd07a3869d79dc1154730c21553ae1fde3bf2
